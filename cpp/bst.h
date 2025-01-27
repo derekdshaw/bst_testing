@@ -2,27 +2,29 @@
 
 #include "node.h"
 #include <utility>
+#include <string>
+#include <memory>
 
 using namespace std;
 
 template<typename NodeValType>
-class BTree final {
+class BST final {
 	
 	static_assert(std::is_arithmetic<NodeValType>::value || std::is_same<NodeValType, std::string>::value, "Template parameter NodeValType must be an arithmetic type or std::string");
 
 public:
 
-	BTree() = default;
-	~BTree() = default;
+	BST() = default;
+	~BST() = default;
 
 	// Remove copy and move. Otherwise
 	// the implementation must also copy all nodes in the tree
 	// we could just copy the root node, and reassign to the rest of
 	// the tree. But that feels unexpected to the caller.
-	BTree(const BTree& tree) = delete;
-	BTree(const BTree&& tree) = delete;
-	BTree& operator=(const BTree& tree) = delete;
-	BTree& operator=(const BTree&& tree) = delete;
+	BST(const BST& tree) = delete;
+	BST(const BST&& tree) = delete;
+	BST& operator=(const BST& tree) = delete;
+	BST& operator=(const BST&& tree) = delete;
 
 	// keep the root node as an internal object
 	shared_ptr<Node<NodeValType>> GetRoot() noexcept {
@@ -56,4 +58,4 @@ private:
 	shared_ptr<Node<NodeValType>> root;
 };
 
-#include "btree.cpp"
+#include "bst.cpp"

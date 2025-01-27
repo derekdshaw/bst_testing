@@ -1,6 +1,6 @@
 #include "lest/lest.hpp"
 
-#include "btree.h"
+#include "bst.h"
 #include "test_support.h"
 
 #include <unordered_set>
@@ -12,7 +12,7 @@ const lest::test specification[] =
 {
     CASE("Root node inserted")
     {
-        auto tree = new BTree<int>();
+        auto tree = new BST<int>();
         auto root = tree->Insert(5);
 
         EXPECT(root == tree->GetRoot());
@@ -94,7 +94,7 @@ const lest::test specification[] =
         // data set of ints in no specific order
         const auto uset { GetLargeData() };
 
-        auto tree = new BTree<int>();
+        auto tree = new BST<int>();
         auto root = tree->Insert(0);
 
         auto start = std::chrono::high_resolution_clock::now();
@@ -122,7 +122,7 @@ const lest::test specification[] =
         // data set of ints in no specific order
         const auto uset { GetLargeData() };
 
-        auto tree = new BTree<int>();
+        auto tree = new BST<int>();
         auto root = tree->Insert(0);
 
         int i = 0;

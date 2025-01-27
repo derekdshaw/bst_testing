@@ -1,8 +1,7 @@
-
 // To keep the code cleaner, break the declaration from the impl.
 
 template<typename NodeValType>
-shared_ptr<Node<NodeValType>> BTree<NodeValType>::Insert(const NodeValType& nodeValue) noexcept {
+shared_ptr<Node<NodeValType>> BST<NodeValType>::Insert(const NodeValType& nodeValue) noexcept {
 
 	if (!root) {
 		root = std::make_shared <Node<NodeValType>>(nodeValue);
@@ -13,7 +12,7 @@ shared_ptr<Node<NodeValType>> BTree<NodeValType>::Insert(const NodeValType& node
 }
 
 template<typename NodeValType>
-bool BTree<NodeValType>::Delete(const NodeValType& nodeValue) noexcept {
+bool BST<NodeValType>::Delete(const NodeValType& nodeValue) noexcept {
 	const auto& [updatedNode, didDelete]{ DeleteNode_Internal(root, nodeValue) };
 
 	// if we deleted the root update the root node.
@@ -25,18 +24,18 @@ bool BTree<NodeValType>::Delete(const NodeValType& nodeValue) noexcept {
 }
 
 template<typename NodeValType>
-shared_ptr<Node<NodeValType>> BTree<NodeValType>::Find(const NodeValType& findNodeValue) noexcept {
+shared_ptr<Node<NodeValType>> BST<NodeValType>::Find(const NodeValType& findNodeValue) noexcept {
 	return FindNode_Internal(root, findNodeValue);
 }
 
 template<typename NodeValType>
-void BTree<NodeValType>::OutputTree() noexcept {
+void BST<NodeValType>::OutputTree() noexcept {
 	OutputTree_Internal(root);
 	cout << endl;
 }
 
 template<typename NodeValType>
-string BTree<NodeValType>::OutputTreeString() noexcept {
+string BST<NodeValType>::OutputTreeString() noexcept {
 
 	string result;
 	OutputTreeString_Internal(root, result);
@@ -44,7 +43,7 @@ string BTree<NodeValType>::OutputTreeString() noexcept {
 }
 
 template<typename NodeValType>
-std::shared_ptr<Node<NodeValType>> BTree<NodeValType>::InsertNode_Internal(const std::shared_ptr<Node<NodeValType>>& node, const NodeValType& nodeValue) noexcept {
+std::shared_ptr<Node<NodeValType>> BST<NodeValType>::InsertNode_Internal(const std::shared_ptr<Node<NodeValType>>& node, const NodeValType& nodeValue) noexcept {
 
 	if (!node) {
 		return make_shared<Node<NodeValType>>(nodeValue);
@@ -62,7 +61,7 @@ std::shared_ptr<Node<NodeValType>> BTree<NodeValType>::InsertNode_Internal(const
 }
 
 template<typename NodeValType>
-pair<shared_ptr <Node<NodeValType>>, bool> BTree<NodeValType>::DeleteNode_Internal(const std::shared_ptr<Node<NodeValType>>& node, const NodeValType& nodeValue) noexcept {
+pair<shared_ptr <Node<NodeValType>>, bool> BST<NodeValType>::DeleteNode_Internal(const std::shared_ptr<Node<NodeValType>>& node, const NodeValType& nodeValue) noexcept {
 
 	if (!node) {
 		return { node, false };
@@ -104,7 +103,7 @@ pair<shared_ptr <Node<NodeValType>>, bool> BTree<NodeValType>::DeleteNode_Intern
 }
 
 template<typename NodeValType>
-std::shared_ptr <Node<NodeValType>> BTree<NodeValType>::minValueNode(const std::shared_ptr <Node<NodeValType>> node) noexcept {
+std::shared_ptr <Node<NodeValType>> BST<NodeValType>::minValueNode(const std::shared_ptr <Node<NodeValType>> node) noexcept {
 	auto current = node;
 	while (current && current->left) {
 		current = current->left;
@@ -114,7 +113,7 @@ std::shared_ptr <Node<NodeValType>> BTree<NodeValType>::minValueNode(const std::
 }
 
 template<typename NodeValType>
-shared_ptr<Node<NodeValType>> BTree<NodeValType>::FindNode_Internal(const std::shared_ptr<Node<NodeValType>>& node, const NodeValType& findNodeValue) noexcept {
+shared_ptr<Node<NodeValType>> BST<NodeValType>::FindNode_Internal(const std::shared_ptr<Node<NodeValType>>& node, const NodeValType& findNodeValue) noexcept {
 
 	if (!node || node->value == findNodeValue)
 		return node;
@@ -127,7 +126,7 @@ shared_ptr<Node<NodeValType>> BTree<NodeValType>::FindNode_Internal(const std::s
 }
 
 template<typename NodeValType>
-void BTree<NodeValType>::OutputTree_Internal(const shared_ptr<Node<NodeValType>>& node) noexcept {
+void BST<NodeValType>::OutputTree_Internal(const shared_ptr<Node<NodeValType>>& node) noexcept {
 
 	// output using in order traversal.
 	if (node) {
@@ -138,20 +137,11 @@ void BTree<NodeValType>::OutputTree_Internal(const shared_ptr<Node<NodeValType>>
 }
 
 template<typename NodeValType>
-void BTree<NodeValType>::OutputTreeString_Internal(const shared_ptr<Node<NodeValType>>& node, string& output) noexcept {
+void BST<NodeValType>::OutputTreeString_Internal(const shared_ptr<Node<NodeValType>>& node, string& output) noexcept {
 	
 	if (node) {
 		OutputTreeString_Internal(node->left, output);
-		if constexpr (std::is_arithmetic<NodeValType>::value) {
-			output.append(to_string(node->value));
-			output.append(" ");
-		}
-		else if constexpr (is_same<NodeValType, bool>::value) {
-			output.append(node->value ? "true" : "false");
-		}
-		else if constexpr (is_same<NodeValType, string>::value) {
-			output.append(node->value);
-		}
+		output += to_string(node->value) + " ";
 		OutputTreeString_Internal(node->right, output);
 	}
 }

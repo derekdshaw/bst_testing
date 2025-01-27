@@ -1,6 +1,6 @@
-#include "btree_test.h"
+#include "bst_test.h"
 
-bool g_ShowOutput{ true };
+bool g_ShowOutput{ false };
 
 // just run the tests.
 int main(int argc, char* argv[])

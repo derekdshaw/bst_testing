@@ -1,13 +1,13 @@
 #pragma once
 
-#include "btree.h"
+#include "bst.h"
 #include <unordered_set>
 
 void SetNodeShowDeleteOutput(bool doOutput) noexcept;
 
 template<typename NodeValType>
-BTree<NodeValType>* BuildTreeForTest() {
-    auto tree = new BTree<NodeValType>();
+BST<NodeValType>* BuildTreeForTest() {
+    auto tree = new BST<NodeValType>();
     auto root = tree->Insert(5);
 
     auto node = tree->Insert(11);
