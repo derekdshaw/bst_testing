@@ -3,15 +3,15 @@ use std::rc::Rc;
 use std::cmp::Ordering;
 
 #[derive(Clone)]
-pub struct BTree<ValType> 
+pub struct BST<ValType> 
 where ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone,
 {
     root: Option<Rc<Node<ValType>>>
 }
 
-impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> BTree<ValType> {
+impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> BST<ValType> {
     pub fn new() -> Self {
-        BTree { root: None }
+        BST { root: None }
     }
 
     pub fn insert(&mut self, value: ValType) {
@@ -123,12 +123,12 @@ mod tests {
     use std::time::Instant;
     use rand::Rng;
 
-    fn make_small_tree() -> BTree<i32> {
-        let mut btree = BTree::new();
-        btree.insert(5);
-        btree.insert(3);
-        btree.insert(7);
-        btree
+    fn make_small_tree() -> BST<i32> {
+        let mut bst = BST::new();
+        bst.insert(5);
+        bst.insert(3);
+        bst.insert(7);
+        bst
     }
 
     fn make_large_data() -> (HashSet<i32>, i32) {
@@ -145,58 +145,58 @@ mod tests {
 
     #[test]
     fn test_insert_one() {
-        let mut btree = BTree::new();
-        btree.insert(5);
-        assert!(btree.find(&5));
+        let mut bst = BST::new();
+        bst.insert(5);
+        assert!(bst.find(&5));
     }
 
     #[test]
     fn test_insert_duplicate() {
-        let mut btree = BTree::new();
-        btree.insert(5);
-        btree.insert(5);
-        assert!(btree.find(&5));
+        let mut bst = BST::new();
+        bst.insert(5);
+        bst.insert(5);
+        assert!(bst.find(&5));
     }
 
     #[test]
     fn test_insert_multiple() {
-        let btree = make_small_tree();
-        assert!(btree.find(&5));
-        assert!(btree.find(&3));
-        assert!(btree.find(&7));
+        let bst = make_small_tree();
+        assert!(bst.find(&5));
+        assert!(bst.find(&3));
+        assert!(bst.find(&7));
     }
 
     #[test]
     fn test_find() {
-        let btree = make_small_tree();
-        assert!(!btree.find(&4));
-        assert!(btree.find(&5));
+        let bst = make_small_tree();
+        assert!(!bst.find(&4));
+        assert!(bst.find(&5));
     }
 
     #[test]
     fn test_delete_single_node() {
-        let mut btree = BTree::new();
-        btree.insert(5);
-        btree.delete(5);
-        assert!(!btree.find(&5));
+        let mut bst = BST::new();
+        bst.insert(5);
+        bst.delete(5);
+        assert!(!bst.find(&5));
     }
 
     #[test]
     fn test_delete_root() {
-        let mut btree = make_small_tree();
-        btree.delete(5);
-        assert!(!btree.find(&5));
-        assert!(btree.find(&3));
-        assert!(btree.find(&7));
+        let mut bst = make_small_tree();
+        bst.delete(5);
+        assert!(!bst.find(&5));
+        assert!(bst.find(&3));
+        assert!(bst.find(&7));
     }
 
     #[test]
     fn test_build_large_tree() {
         let (data, _) = make_large_data();
-        let mut btree = BTree::new();
+        let mut bst = BST::new();
         let start = Instant::now();
         for &item in &data {
-            btree.insert(item);
+            bst.insert(item);
         }
         let duration = start.elapsed();
         println!("Time taken to build large tree: {:?}", duration);
@@ -205,14 +205,14 @@ mod tests {
     #[test]
     fn test_delete_from_large_tree() {
         let (data, target) = make_large_data();
-        let mut btree = BTree::new();
+        let mut bst = BST::new();
         for &item in &data {
-            btree.insert(item);
+            bst.insert(item);
         }
         let start = Instant::now();
-        btree.delete(target);
+        bst.delete(target);
         let duration = start.elapsed();
         println!("Time taken to delete from large tree: {:?}", duration);
-        assert!(!btree.find(&target));
+        assert!(!bst.find(&target));
     }
 }

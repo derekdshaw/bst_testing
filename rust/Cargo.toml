@@ -1,10 +1,10 @@
 [package]
-name = "console_test_app_rust"
+name = "bst_testing"
 version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "btree"
+name = "bst"
 path = "src/lib.rs"
 
 [profile.release]
@@ -19,5 +19,5 @@ rand = "0.8.5"
 criterion = "0.5"
 
 [[bench]]
-name = "btree_benchmark"
+name = "bst_benchmark"
 harness = false

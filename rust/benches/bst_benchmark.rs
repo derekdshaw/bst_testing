@@ -1,4 +1,4 @@
-use btree::btree::BTree;
+use bst::bst::BST;
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use std::collections::HashSet;
 use rand::Rng;
@@ -27,7 +27,7 @@ fn build_large_tree_benchmark(c: &mut Criterion) {
     
     group.bench_function("build large tree", |b| {
         b.iter(|| {
-            let mut tree = BTree::new();
+            let mut tree = BST::new();
             for &item in &data {
                 black_box(tree.insert(item));
             }
