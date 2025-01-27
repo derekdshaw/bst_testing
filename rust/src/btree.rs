@@ -25,15 +25,15 @@ impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> BTree<ValT
                 Ordering::Less => {
                     let next_node = Self::insert_internal(&cur.left.borrow(), new_node);
                     *cur.left.borrow_mut() = next_node;
-                    Some(Rc::clone(cur))
                 },
                 Ordering::Greater => {
                     let next_node = Self::insert_internal(&cur.right.borrow(), new_node);
                     *cur.right.borrow_mut() = next_node;
-                    Some(Rc::clone(cur))
                 },
-                Ordering::Equal => Some(Rc::clone(cur))
+                Ordering::Equal => {}
             }
+
+            Some(Rc::clone(cur))
         } else {
             Some(new_node)
         }
