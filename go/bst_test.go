@@ -127,11 +127,14 @@ func BenchmarkDeleteFromLargeBST(b *testing.B) {
 		// Only measure the deletion operation
 		bst.Delete(valueToDelete)
 
+		// NOTE: I was trying to stop/start the timer around the insertion,
+		// so that only the delete would be measured. However, doing this
+		// causes the benchmark tests to hang for some reason.
+
 		// Stop timer for reinsertion
-		//b.StopTimer()
+		// b.StopTimer()
 		bst.Insert(valueToDelete)
-		// Start timer for next deletion
-		//b.StartTimer()
+		// b.StartTimer()
 	}
 }
 
