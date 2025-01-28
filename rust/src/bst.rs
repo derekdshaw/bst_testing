@@ -1,12 +1,12 @@
 use crate::node::Node;
-use std::rc::Rc;
+use std::boxed::Box;
 use std::cmp::Ordering;
 
-#[derive(Clone)]
+#[derive(Debug)]
 pub struct BST<ValType> 
 where ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone,
 {
-    root: Option<Rc<Node<ValType>>>
+    root: Option<Box<Node<ValType>>>
 }
 
 impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> BST<ValType> {
@@ -15,27 +15,24 @@ impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> BST<ValTyp
     }
 
     pub fn insert(&mut self, value: ValType) {
-        let new_node = Rc::new(Node::new(value));
-        self.root = Self::insert_internal(&self.root, new_node);
+        self.root = Self::insert_internal(&mut self.root, value);
     }
 
-    fn insert_internal(current: &Option<Rc<Node<ValType>>>, new_node: Rc<Node<ValType>>) -> Option<Rc<Node<ValType>>> {   
-        if let Some(cur) = current {
-            match new_node.value.cmp(&cur.value) {
-                Ordering::Less => {
-                    let next_node = Self::insert_internal(&cur.left.borrow(), new_node);
-                    *cur.left.borrow_mut() = next_node;
-                },
-                Ordering::Greater => {
-                    let next_node = Self::insert_internal(&cur.right.borrow(), new_node);
-                    *cur.right.borrow_mut() = next_node;
-                },
-                Ordering::Equal => {}
-            }
-
-            Some(Rc::clone(cur))
-        } else {
-            Some(new_node)
+    fn insert_internal(node: &mut Option<Box<Node<ValType>>>, value: ValType) -> Option<Box<Node<ValType>>> {   
+        match node {
+            Some(cur) => {
+                match value.cmp(&cur.value) {
+                    Ordering::Less => {
+                        cur.left = Self::insert_internal(&mut cur.left, value);
+                    },
+                    Ordering::Greater => {
+                        cur.right = Self::insert_internal(&mut cur.right, value);
+                    },
+                    Ordering::Equal => {}
+                }
+                Some(node.take().unwrap())
+            },
+            None => Some(Box::new(Node::new(value)))
         }
     }
 
@@ -43,11 +40,11 @@ impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> BST<ValTyp
         Self::find_internal(&self.root, value)
     }
 
-    fn find_internal(current: &Option<Rc<Node<ValType>>>, value: &ValType) -> bool {
+    fn find_internal(current: &Option<Box<Node<ValType>>>, value: &ValType) -> bool {
         if let Some(cur) = current {
             match value.cmp(&cur.value) {
-                Ordering::Less => Self::find_internal(&cur.left.borrow(), value),
-                Ordering::Greater => Self::find_internal(&cur.right.borrow(), value),
+                Ordering::Less => Self::find_internal(&cur.left, value),
+                Ordering::Greater => Self::find_internal(&cur.right, value),
                 Ordering::Equal => true
             }
         } else {
@@ -56,42 +53,43 @@ impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> BST<ValTyp
     }
 
     pub fn delete(&mut self, value: ValType) {
-        self.root = Self::delete_internal(&self.root, value);
+        self.root = Self::delete_internal(&mut self.root, value);
     }
 
-    fn delete_internal(current: &Option<Rc<Node<ValType>>>, value: ValType) -> Option<Rc<Node<ValType>>> {
-        if let Some(cur) = current {
+    fn delete_internal(node: &mut Option<Box<Node<ValType>>>, value: ValType) -> Option<Box<Node<ValType>>> {
+        if let Some(cur) = node {
             match value.cmp(&cur.value) {
                 Ordering::Less => {
-                    let new_left = Self::delete_internal(&cur.left.borrow(), value);
-                    *cur.left.borrow_mut() = new_left;
-                    Some(Rc::clone(cur))
+                    let new_left = Self::delete_internal(&mut cur.left, value);
+                    cur.left = new_left;
+                    Some(node.take().unwrap())
                 },
                 Ordering::Greater => {
-                    let new_right = Self::delete_internal(&cur.right.borrow(), value);
-                    *cur.right.borrow_mut() = new_right;
-                    Some(Rc::clone(cur))
+                    let new_right = Self::delete_internal(&mut cur.right, value);
+                    cur.right = new_right;
+                    Some(node.take().unwrap())
                 },
                 Ordering::Equal => {
                     // Case 1: No children
-                    if cur.left.borrow().is_none() && cur.right.borrow().is_none() {
+                    if cur.left.is_none() && cur.right.is_none() {
                         None
                     }
                     // Case 2: Only right child
-                    else if cur.left.borrow().is_none() {
-                        cur.right.borrow().clone()
+                    else if cur.left.is_none() {
+                        Some(cur.right.take().unwrap())
                     }
                     // Case 3: Only left child
-                    else if cur.right.borrow().is_none() {
-                        cur.left.borrow().clone()
+                    else if cur.right.is_none() {
+                        Some(cur.left.take().unwrap())
                     }
                     // Case 4: Two children
                     else {
-                        if let Some(successor) = Self::find_min_node(&cur.right.borrow()) {
-                            let new_node = Node::new(successor.value.clone());
-                            *new_node.left.borrow_mut() = cur.left.borrow().clone();
-                            *new_node.right.borrow_mut() = Self::delete_internal(&cur.right.borrow(), successor.value.clone());
-                            Some(Rc::new(new_node))
+                        if let Some(successor) = Self::find_min_node(&mut cur.right) {
+                            let value = successor.value;
+                            let mut new_node = Box::new(Node::new(value.clone()));
+                            new_node.left = Some(cur.left.take().unwrap());
+                            new_node.right = Self::delete_internal(&mut cur.right, value);
+                            Some(new_node)
                         } else {
                             None
                         }
@@ -103,15 +101,16 @@ impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> BST<ValTyp
         }
     }
 
-    fn find_min_node(node: &Option<Rc<Node<ValType>>>) -> Option<Rc<Node<ValType>>> {
-        if let Some(n) = node {
-            if n.left.borrow().is_none() {
-                Some(Rc::clone(n))
-            } else {
-                Self::find_min_node(&n.left.borrow())
-            }
-        } else {
-            None
+    fn find_min_node(node: &mut Option<Box<Node<ValType>>>) -> Option<Box<Node<ValType>>> {
+        match node {
+            Some(n) => {
+                if n.left.is_none() {
+                    node.take()
+                } else {
+                    Self::find_min_node(&mut n.left)
+                }
+            },
+            None => None
         }
     }
 }

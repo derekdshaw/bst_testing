@@ -1,13 +1,12 @@
-use std::rc::Rc;
-use std::cell::RefCell;
+use std::boxed::Box;
 
 #[derive(Debug)]
 pub struct Node<ValType> 
 where ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone,
 {
     pub value: ValType,
-    pub left: RefCell<Option<Rc<Node<ValType>>>>,
-    pub right: RefCell<Option<Rc<Node<ValType>>>>, 
+    pub left: Option<Box<Node<ValType>>>,
+    pub right: Option<Box<Node<ValType>>>,
 }
 
 impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> Node<ValType> 
@@ -15,8 +14,8 @@ impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> Node<ValTy
     pub fn new(value: ValType) -> Node<ValType> {
         Node { 
             value, 
-            left: RefCell::new(None),
-            right: RefCell::new(None),
+            left: None,
+            right: None,
         }
     }
 }
@@ -29,20 +28,20 @@ mod tests {
     fn test_new() {
         let node = Node::new(5);
         assert_eq!(node.value, 5);
-        assert!(node.left.borrow().is_none());
-        assert!(node.right.borrow().is_none());
+        assert!(node.left.is_none());
+        assert!(node.right.is_none());
     }
 
     #[test]
     fn test_linking() {
-        let node2 = Rc::new(Node::new(3));
-        let node3 = Rc::new(Node::new(7));
+        let node2 = Box::new(Node::new(3));
+        let node3 = Box::new(Node::new(7));
         
-        let root = Node::new(5);
-        *root.left.borrow_mut() = Some(node2);
-        *root.right.borrow_mut() = Some(node3);
+        let mut root = Box::new(Node::new(5));
+        root.left = Some(node2);
+        root.right = Some(node3);
         
-        assert_eq!(root.left.borrow().as_ref().unwrap().value, 3);
-        assert_eq!(root.right.borrow().as_ref().unwrap().value, 7);
+        assert_eq!(root.left.unwrap().value, 3);
+        assert_eq!(root.right.unwrap().value, 7);
     }
 }
