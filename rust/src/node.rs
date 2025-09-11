@@ -3,8 +3,8 @@ pub struct Node<ValType>
 where ValType: std::fmt::Display + Ord + Clone,
 {
     pub value: ValType,
-    pub left: Option<usize>, // these will be indexes into the main BST built of nodes.
-    pub right: Option<usize>,
+    pub left: Option<Box<Node<ValType>>>,
+    pub right: Option<Box<Node<ValType>>>,
 }
 
 impl<ValType: std::fmt::Display + Ord + Clone> Node<ValType> 
@@ -41,12 +41,10 @@ mod tests {
         let root_index = 0; // The root is at index 0
         
         // Now work with the node through the vector
-        nodes[root_index].left = Some(nodes.len());
-        nodes.push(Node::new(&3));
-        nodes[root_index].right = Some(nodes.len());
-        nodes.push(Node::new(&7));
+        nodes[root_index].left = Some(Box::new(Node::new(&3)));
+        nodes[root_index].right = Some(Box::new(Node::new(&7)));
         
-        assert_eq!(nodes[nodes[root_index].left.unwrap()].value, 3);
-        assert_eq!(nodes[nodes[root_index].right.unwrap()].value, 7);
+        assert_eq!(nodes[root_index].left.as_ref().unwrap().value, 3);
+        assert_eq!(nodes[root_index].right.as_ref().unwrap().value, 7);
     }
 }
