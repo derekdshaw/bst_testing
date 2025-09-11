@@ -1,118 +1,133 @@
 use crate::node::Node;
-use std::rc::Rc;
 use std::cmp::Ordering;
 
 #[derive(Clone)]
 pub struct BST<ValType> 
-where ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone,
+where ValType: std::fmt::Display + Ord + Clone,
 {
-    root: Option<Rc<Node<ValType>>>
+    nodes: Vec<Node<ValType>>,
+    root: Option<usize>
 }
 
 impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> BST<ValType> {
     pub fn new() -> Self {
-        BST { root: None }
+        BST { nodes: vec![], root: None }
     }
 
     pub fn insert(&mut self, value: ValType) {
-        let new_node = Rc::new(Node::new(value));
-        self.root = Self::insert_internal(&self.root, new_node);
-    }
+        let index = self.nodes.len();
+        //let new_value = value.clone();
+        self.nodes.push(Node::new(&value)); // now the new node is in the vector at index
+        if let Some(root_index) = self.root {
+            let mut cur = root_index;
+            loop {
+                let node = &mut self.nodes[cur];
+                if value < node.value {
+                    if let Some(l) = node.left { cur = l; continue }
+                    node.left = Some(index);
+                    break;
+                } else {
+                    if let Some(r) = node.right { cur = r; continue }
+                    node.right = Some(index);
+                    break;
+                }
 
-    fn insert_internal(current: &Option<Rc<Node<ValType>>>, new_node: Rc<Node<ValType>>) -> Option<Rc<Node<ValType>>> {   
-        if let Some(cur) = current {
-            match new_node.value.cmp(&cur.value) {
-                Ordering::Less => {
-                    let next_node = Self::insert_internal(&cur.left.borrow(), new_node);
-                    *cur.left.borrow_mut() = next_node;
-                },
-                Ordering::Greater => {
-                    let next_node = Self::insert_internal(&cur.right.borrow(), new_node);
-                    *cur.right.borrow_mut() = next_node;
-                },
-                Ordering::Equal => {}
             }
-
-            Some(Rc::clone(cur))
         } else {
-            Some(new_node)
+            self.root = Some(index);
         }
     }
 
     pub fn find(&self, value: &ValType) -> bool {
-        Self::find_internal(&self.root, value)
-    }
-
-    fn find_internal(current: &Option<Rc<Node<ValType>>>, value: &ValType) -> bool {
-        if let Some(cur) = current {
-            match value.cmp(&cur.value) {
-                Ordering::Less => Self::find_internal(&cur.left.borrow(), value),
-                Ordering::Greater => Self::find_internal(&cur.right.borrow(), value),
-                Ordering::Equal => true
-            }
+        if let Some(root_index) = self.root {
+            self.find_internal(root_index, value)
         } else {
             false
         }
     }
 
-    pub fn delete(&mut self, value: ValType) {
-        self.root = Self::delete_internal(&self.root, value);
+    fn find_internal(&self, index: usize, value: &ValType) -> bool {
+        let node = &self.nodes[index];
+        match value.cmp(&node.value) {
+            Ordering::Less => {
+                if let Some(left) = node.left {
+                    self.find_internal(left, value)
+                } else {
+                    false
+                }
+            },
+            Ordering::Greater => {
+                if let Some(right) = node.right {
+                    self.find_internal(right, value)
+                } else {
+                    false
+                }
+            },
+            Ordering::Equal => true
+        }
     }
 
-    fn delete_internal(current: &Option<Rc<Node<ValType>>>, value: ValType) -> Option<Rc<Node<ValType>>> {
-        if let Some(cur) = current {
-            match value.cmp(&cur.value) {
-                Ordering::Less => {
-                    let new_left = Self::delete_internal(&cur.left.borrow(), value);
-                    *cur.left.borrow_mut() = new_left;
-                    Some(Rc::clone(cur))
-                },
-                Ordering::Greater => {
-                    let new_right = Self::delete_internal(&cur.right.borrow(), value);
-                    *cur.right.borrow_mut() = new_right;
-                    Some(Rc::clone(cur))
-                },
-                Ordering::Equal => {
-                    // Case 1: No children
-                    if cur.left.borrow().is_none() && cur.right.borrow().is_none() {
-                        None
-                    }
-                    // Case 2: Only right child
-                    else if cur.left.borrow().is_none() {
-                        cur.right.borrow().clone()
-                    }
-                    // Case 3: Only left child
-                    else if cur.right.borrow().is_none() {
-                        cur.left.borrow().clone()
-                    }
-                    // Case 4: Two children
-                    else {
-                        if let Some(successor) = Self::find_min_node(&cur.right.borrow()) {
-                            let new_node = Node::new(successor.value.clone());
-                            *new_node.left.borrow_mut() = cur.left.borrow().clone();
-                            *new_node.right.borrow_mut() = Self::delete_internal(&cur.right.borrow(), successor.value.clone());
-                            Some(Rc::new(new_node))
-                        } else {
-                            None
+    pub fn delete(&mut self, value: ValType) {
+        if let Some(root_index) = self.root {
+            self.root = self.delete_internal(Some(root_index), &value);
+        }
+    }
+
+    fn delete_internal(&mut self, current: Option<usize>, value: &ValType) -> Option<usize> {
+        match current {
+            Some(index) => {
+                let node_value = self.nodes[index].value.clone();
+                match value.cmp(&node_value) {
+                    Ordering::Less => {
+                        let left_child = self.nodes[index].left;
+                        let new_left = self.delete_internal(left_child, value);
+                        self.nodes[index].left = new_left;
+                        Some(index)
+                    },
+                    Ordering::Greater => {
+                        let right_child = self.nodes[index].right;
+                        let new_right = self.delete_internal(right_child, value);
+                        self.nodes[index].right = new_right;
+                        Some(index)
+                    },
+                    Ordering::Equal => {
+                        let left_child = self.nodes[index].left;
+                        let right_child = self.nodes[index].right;
+                        
+                        match (left_child, right_child) {
+                            // No children
+                            (None, None) => None,
+                            // Only right child
+                            (None, Some(right)) => Some(right),
+                            // Only left child
+                            (Some(left), None) => Some(left),
+                            // Two children - find inorder successor (minimum in right subtree)
+                            (Some(_left), Some(right)) => {
+                                let successor_index = self.find_min(right);
+                                let successor_value = self.nodes[successor_index].value.clone();
+                                
+                                // Replace current node's value with successor's value
+                                self.nodes[index].value = successor_value.clone();
+                                
+                                // Delete the successor node from right subtree
+                                let new_right = self.delete_internal(Some(right), &successor_value);
+                                self.nodes[index].right = new_right;
+                                
+                                Some(index)
+                            }
                         }
                     }
                 }
-            }
-        } else {
-            None
+            },
+            None => None
         }
     }
 
-    fn find_min_node(node: &Option<Rc<Node<ValType>>>) -> Option<Rc<Node<ValType>>> {
-        if let Some(n) = node {
-            if n.left.borrow().is_none() {
-                Some(Rc::clone(n))
-            } else {
-                Self::find_min_node(&n.left.borrow())
-            }
-        } else {
-            None
+    fn find_min(&self, mut index: usize) -> usize {
+        while let Some(left) = self.nodes[index].left {
+            index = left;
         }
+        index
     }
 }
 
