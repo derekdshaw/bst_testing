@@ -16,11 +16,13 @@ fn make_large_data() -> (HashSet<i32>, i32) {
 
 // Have main do some work for profiling with external tools.
 fn main() {
-    let (data, _) = make_large_data();
-    let mut bst = BST::new();
+    for _ in 0..10 {
+        let (data, _) = make_large_data();
+        let mut bst = BST::new();
 
-    for &item in &data {
-        bst.insert(item);
+        for &item in &data {
+            bst.insert(item);
+        }
     }
 
     println!("done");

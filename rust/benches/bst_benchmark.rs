@@ -18,7 +18,7 @@ fn build_large_tree_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("BST Operations");
     
     // Configure the measurement time (default is 5 seconds)
-    group.measurement_time(std::time::Duration::from_secs(10));
+    group.measurement_time(std::time::Duration::from_secs(13));
     // Optionally reduce sample size since we're doing longer measurements
     group.sample_size(10);
     
@@ -42,7 +42,7 @@ fn delete_from_large_tree_benchmark(c: &mut Criterion) {
     let mut group = c.benchmark_group("BST Operations");
     
     // Configure the measurement time 
-    group.measurement_time(std::time::Duration::from_secs(60));
+    group.measurement_time(std::time::Duration::from_secs(10));
     group.sample_size(10);
     
     // Generate the data once before benchmarking

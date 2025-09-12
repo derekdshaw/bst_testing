@@ -5,49 +5,57 @@ use std::cmp::Ordering;
 pub struct BST<ValType> 
 where ValType: std::fmt::Display + Ord + Clone,
 {
-    root: Option<Box<Node<ValType>>>,
+    nodes: Vec<Node<ValType>>,
+    root: Option<usize>,
 }
 
 impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> BST<ValType> {
     pub fn new() -> Self {
-        BST { root: None }
+        BST { root: None, nodes: Vec::new() }
     }
-
+    
+    #[inline(never)]
     pub fn insert(&mut self, value: ValType) {
         if self.root.is_none() {
-            self.root = Some(Box::new(Node::new(&value)));
+            self.root = Some(self.nodes.len());
+            self.nodes.push(Node::new(&value));
             return;
         }
 
-        let mut current = &mut self.root;
+        let mut current = self.root;
         
         loop {
             match current {
-                Some(node) => {
+                Some(node_idx) => {
+                    let next_node_idx = self.nodes.len();
+                    let node = &mut self.nodes[node_idx];
                     match value.cmp(&node.value) {
                         Ordering::Less => {
                             if node.left.is_none() {
-                                node.left = Some(Box::new(Node::new(&value)));
+                                node.left = Some(next_node_idx);
+                                self.nodes.push(Node::new(&value));
                                 break;
                             } else {
-                                current = &mut node.left;
+                                current = node.left;
                             }
                         },
                         Ordering::Greater => {
                             if node.right.is_none() {
-                                node.right = Some(Box::new(Node::new(&value)));
+                                node.right = Some(next_node_idx);
+                                self.nodes.push(Node::new(&value));
                                 break;
                             } else {
-                                current = &mut node.right;
+                                current = node.right;
                             }
                         },
                         Ordering::Equal => {
                             // For duplicates, insert to the right for consistency
                             if node.right.is_none() {
-                                node.right = Some(Box::new(Node::new(&value)));
+                                node.right = Some(next_node_idx);
+                                self.nodes.push(Node::new(&value));
                                 break;
                             } else {
-                                current = &mut node.right;
+                                current = node.right;
                             }
                         }
                     }
@@ -58,42 +66,52 @@ impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> BST<ValTyp
     }
 
     pub fn find(&self, value: &ValType) -> bool {
-        Self::find_recursive(&self.root, value)
+        self.find_recursive(&self.root, value)
     }
 
-    fn find_recursive(node: &Option<Box<Node<ValType>>>, value: &ValType) -> bool {
+    fn find_recursive(&self, node: &Option<usize>, value: &ValType) -> bool {
         match node {
             None => false,
             Some(node) => {
-                match value.cmp(&node.value) {
+                match value.cmp(&self.nodes[*node].value) {
                     Ordering::Equal => true,
-                    Ordering::Less => Self::find_recursive(&node.left, value),
-                    Ordering::Greater => Self::find_recursive(&node.right, value),
+                    Ordering::Less => self.find_recursive(&self.nodes[*node].left, value),
+                    Ordering::Greater => self.find_recursive(&self.nodes[*node].right, value),
                 }
             }
         }
     }
 
     pub fn delete(&mut self, value: ValType) {
-        self.root = Self::delete_recursive(self.root.take(), &value);
+        let root_idx = match self.root {
+            Some(idx) => idx,
+            None => return,
+        };
+        self.root = self.delete_recursive(Some(root_idx), &value);
     }
 
-    fn delete_recursive(node: Option<Box<Node<ValType>>>, value: &ValType) -> Option<Box<Node<ValType>>> {
+    fn delete_recursive(&mut self, node: Option<usize>, value: &ValType) -> Option<usize> {
         match node {
             None => None,
-            Some(mut node) => {
-                match value.cmp(&node.value) {
+            Some(node_idx) => {
+                // Store the node's children before we potentially modify them
+                let left_child = self.nodes[node_idx].left;
+                let right_child = self.nodes[node_idx].right;
+                
+                match value.cmp(&self.nodes[node_idx].value) {
                     Ordering::Less => {
-                        node.left = Self::delete_recursive(node.left.take(), value);
-                        Some(node)
+                        let new_left = self.delete_recursive(left_child, value);
+                        self.nodes[node_idx].left = new_left;
+                        Some(node_idx)
                     },
                     Ordering::Greater => {
-                        node.right = Self::delete_recursive(node.right.take(), value);
-                        Some(node)
+                        let new_right = self.delete_recursive(right_child, value);
+                        self.nodes[node_idx].right = new_right;
+                        Some(node_idx)
                     },
                     Ordering::Equal => {
                         // Node to delete found
-                        match (node.left.take(), node.right.take()) {
+                        match (left_child, right_child) {
                             // No children
                             (None, None) => None,
                             // Only right child
@@ -102,11 +120,11 @@ impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> BST<ValTyp
                             (Some(left), None) => Some(left),
                             // Two children - find inorder successor
                             (Some(left), Some(right)) => {
-                                let (min_value, new_right) = Self::extract_min(right);
-                                node.value = min_value;
-                                node.left = Some(left);
-                                node.right = new_right;
-                                Some(node)
+                                let (min_value, new_right) = self.extract_min(right);
+                                self.nodes[node_idx].value = min_value;
+                                self.nodes[node_idx].left = Some(left);
+                                self.nodes[node_idx].right = new_right;
+                                Some(node_idx)
                             }
                         }
                     }
@@ -115,16 +133,21 @@ impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> BST<ValTyp
         }
     }
 
-    fn extract_min(mut node: Box<Node<ValType>>) -> (ValType, Option<Box<Node<ValType>>>) {
-        match node.left.take() {
+    fn extract_min(&mut self, node_idx: usize) -> (ValType, Option<usize>) {
+        let left_idx = self.nodes[node_idx].left;
+        match left_idx {
             None => {
-                // This is the minimum node
-                (node.value, node.right.take())
+                // This is the minimum node - return its value and right child
+                let value = self.nodes[node_idx].value.clone();
+                let right_child = self.nodes[node_idx].right;
+                (value, right_child)
             },
-            Some(left) => {
-                let (min_value, new_left) = Self::extract_min(left);
-                node.left = new_left;
-                (min_value, Some(node))
+            Some(left_idx) => {
+                // Recursively find minimum in left subtree
+                let (min_value, new_left) = self.extract_min(left_idx);
+                // Update the left child of current node
+                self.nodes[node_idx].left = new_left;
+                (min_value, Some(node_idx))
             }
         }
     }
