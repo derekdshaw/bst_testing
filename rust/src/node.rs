@@ -1,22 +1,19 @@
-use std::rc::Rc;
-use std::cell::RefCell;
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Node<ValType> 
-where ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone,
+where ValType: std::fmt::Display + Ord + Clone,
 {
     pub value: ValType,
-    pub left: RefCell<Option<Rc<Node<ValType>>>>,
-    pub right: RefCell<Option<Rc<Node<ValType>>>>, 
+    pub left: Option<Box<Node<ValType>>>,
+    pub right: Option<Box<Node<ValType>>>,
 }
 
-impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> Node<ValType> 
+impl<ValType: std::fmt::Display + Ord + Clone> Node<ValType> 
 {
-    pub fn new(value: ValType) -> Node<ValType> {
+    pub fn new(value: &ValType) -> Node<ValType> {
         Node { 
-            value, 
-            left: RefCell::new(None),
-            right: RefCell::new(None),
+            value: value.clone(), 
+            left: None,
+            right: None,
         }
     }
 }
@@ -27,22 +24,27 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let node = Node::new(5);
+        let node = Node::new(&5);
         assert_eq!(node.value, 5);
-        assert!(node.left.borrow().is_none());
-        assert!(node.right.borrow().is_none());
+        assert!(node.left.is_none());
+        assert!(node.right.is_none());
     }
 
     #[test]
     fn test_linking() {
-        let node2 = Rc::new(Node::new(3));
-        let node3 = Rc::new(Node::new(7));
+
+        // The BST would have a Vec<Node<T>> so simulate that here
+        let mut nodes = vec![];
         
-        let root = Node::new(5);
-        *root.left.borrow_mut() = Some(node2);
-        *root.right.borrow_mut() = Some(node3);
+        let root = Node::new(&5);
+        nodes.push(root);
+        let root_index = 0; // The root is at index 0
         
-        assert_eq!(root.left.borrow().as_ref().unwrap().value, 3);
-        assert_eq!(root.right.borrow().as_ref().unwrap().value, 7);
+        // Now work with the node through the vector
+        nodes[root_index].left = Some(Box::new(Node::new(&3)));
+        nodes[root_index].right = Some(Box::new(Node::new(&7)));
+        
+        assert_eq!(nodes[root_index].left.as_ref().unwrap().value, 3);
+        assert_eq!(nodes[root_index].right.as_ref().unwrap().value, 7);
     }
 }
