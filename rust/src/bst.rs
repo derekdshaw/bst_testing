@@ -14,27 +14,45 @@ impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> BST<ValTyp
     }
 
     pub fn insert(&mut self, value: ValType) {
-        self.root = Self::insert_recursive(self.root.take(), value);
-    }
+        if self.root.is_none() {
+            self.root = Some(Box::new(Node::new(&value)));
+            return;
+        }
 
-    fn insert_recursive(node: Option<Box<Node<ValType>>>, value: ValType) -> Option<Box<Node<ValType>>> {
-        match node {
-            None => Some(Box::new(Node::new(&value))),
-            Some(mut node) => {
-                match value.cmp(&node.value) {
-                    Ordering::Less => {
-                        node.left = Self::insert_recursive(node.left.take(), value);
-                    },
-                    Ordering::Greater => {
-                        node.right = Self::insert_recursive(node.right.take(), value);
-                    },
-                    Ordering::Equal => {
-                        // For duplicates, we can choose to insert in either subtree
-                        // Let's insert to the right for consistency
-                        node.right = Self::insert_recursive(node.right.take(), value);
+        let mut current = &mut self.root;
+        
+        loop {
+            match current {
+                Some(node) => {
+                    match value.cmp(&node.value) {
+                        Ordering::Less => {
+                            if node.left.is_none() {
+                                node.left = Some(Box::new(Node::new(&value)));
+                                break;
+                            } else {
+                                current = &mut node.left;
+                            }
+                        },
+                        Ordering::Greater => {
+                            if node.right.is_none() {
+                                node.right = Some(Box::new(Node::new(&value)));
+                                break;
+                            } else {
+                                current = &mut node.right;
+                            }
+                        },
+                        Ordering::Equal => {
+                            // For duplicates, insert to the right for consistency
+                            if node.right.is_none() {
+                                node.right = Some(Box::new(Node::new(&value)));
+                                break;
+                            } else {
+                                current = &mut node.right;
+                            }
+                        }
                     }
-                }
-                Some(node)
+                },
+                None => unreachable!("Should never reach here due to initial check"),
             }
         }
     }
