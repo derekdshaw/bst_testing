@@ -1,5 +1,3 @@
-//use std::boxed::Box;
-
 #[derive(Debug)]
 pub struct Node<ValType>
 where
@@ -26,7 +24,7 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let node = Node::new(5);
+        let node = Node::new(&5);
         assert_eq!(node.value, 5);
         assert!(node.left.is_none());
         assert!(node.right.is_none());

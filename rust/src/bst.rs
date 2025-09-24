@@ -66,6 +66,7 @@ impl<ValType: Ord + Clone> BST<ValType> {
     pub fn find(&self, value: &ValType) -> bool {
         self.find_internal(&self.root, value)
     }
+  
     fn find_internal(&self, current: &Option<usize>, value: &ValType) -> bool {
         if let Some(cur_idx) = current {
             let node = &self.nodes[*cur_idx];
@@ -74,8 +75,6 @@ impl<ValType: Ord + Clone> BST<ValType> {
                 Ordering::Greater => self.find_internal(&node.right, value),
                 Ordering::Equal => true,
             }
-        } else {
-            false
         }
     }
 
