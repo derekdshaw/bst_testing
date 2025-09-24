@@ -4,16 +4,16 @@ This code implements a simple binary search tree using C++, Rust, and Go. I wrot
 
 ## Implementations
 
-Each implementation is a separate directory. The Rust and Go implementations use ref counted pointers for children. This was done so that cleanup of the tree after being deleted would be automatic. Where the Go implementation does not need ref counted pointers, the children are stored in a slice.
+Each implementation is a separate directory. The C++ implementations use ref counted pointers for children. This was done so that cleanup of the tree after being deleted would be automatic. Where the Go implementation does not need ref counted pointers, the children are stored in a slice. The rust version stores the nodes in a Vector. This stores the nodes in a contiguous block of memory and cuts down on memory allocations. The nodes are released as part of the vector on drop.
 
-Tests are used in order to validate the implementations. As well as test some performance. Benchmarks were also added where possible.
+Tests are used in order to validate the implementations. As well as test some performance benchmarks were also added where possible.
 
 To run the tests/benchmarks
 
 Rust
 ```powershell
 cargo test
-cargo bench
+cargo bench --profile release-performance
 ```
 
 Go
