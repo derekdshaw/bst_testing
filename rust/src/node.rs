@@ -2,14 +2,14 @@ use std::boxed::Box;
 
 #[derive(Debug)]
 pub struct Node<ValType> 
-where ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone,
+where ValType: Ord,
 {
     pub value: ValType,
     pub left: Option<Box<Node<ValType>>>,
     pub right: Option<Box<Node<ValType>>>,
 }
 
-impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> Node<ValType> 
+impl<ValType: Ord> Node<ValType> 
 {
     pub fn new(value: ValType) -> Node<ValType> {
         Node { 

@@ -4,42 +4,41 @@ use std::cmp::Ordering;
 
 #[derive(Debug)]
 pub struct BST<ValType> 
-where ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone,
+where ValType: Ord,
 {
     root: Option<Box<Node<ValType>>>
 }
-
-impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> BST<ValType> {
+impl<ValType: Ord> BST<ValType> {
     pub fn new() -> Self {
         BST { root: None }
     }
 
     pub fn insert(&mut self, value: ValType) {
-        self.root = Self::insert_internal(&mut self.root, value);
+        Self::insert_internal(&mut self.root, value);
     }
 
-    fn insert_internal(node: &mut Option<Box<Node<ValType>>>, value: ValType) -> Option<Box<Node<ValType>>> {   
+    fn insert_internal(node: &mut Option<Box<Node<ValType>>>, value: ValType) {   
         match node {
             Some(cur) => {
                 match value.cmp(&cur.value) {
                     Ordering::Less => {
-                        cur.left = Self::insert_internal(&mut cur.left, value);
+                        Self::insert_internal(&mut cur.left, value);
                     },
                     Ordering::Greater => {
-                        cur.right = Self::insert_internal(&mut cur.right, value);
+                        Self::insert_internal(&mut cur.right, value);
                     },
-                    Ordering::Equal => {}
+                    Ordering::Equal => {} // Duplicate value, do nothing
                 }
-                Some(node.take().unwrap())
             },
-            None => Some(Box::new(Node::new(value)))
+            None => {
+                *node = Some(Box::new(Node::new(value)));
+            }
         }
     }
 
     pub fn find(&self, value: &ValType) -> bool {
         Self::find_internal(&self.root, value)
     }
-
     fn find_internal(current: &Option<Box<Node<ValType>>>, value: &ValType) -> bool {
         if let Some(cur) = current {
             match value.cmp(&cur.value) {
@@ -85,11 +84,13 @@ impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> BST<ValTyp
                     // Case 4: Two children
                     else {
                         if let Some(successor) = Self::find_min_node(&mut cur.right) {
-                            let value = successor.value;
-                            let mut new_node = Box::new(Node::new(value.clone()));
-                            new_node.left = Some(cur.left.take().unwrap());
-                            new_node.right = Self::delete_internal(&mut cur.right, value);
-                            Some(new_node)
+                            std::mem::swap(&mut cur.value, &mut successor.value);
+                            Self::delete_internal(&mut cur.right, value)
+                            // let value = successor.value;
+                            // let mut new_node = Box::new(Node::new(value.clone()));
+                            // new_node.left = Some(cur.left.take().unwrap());
+                            // new_node.right = Self::delete_internal(&mut cur.right, value);
+                            // Some(new_node)
                         } else {
                             None
                         }
@@ -101,11 +102,11 @@ impl<ValType: std::fmt::Display + std::cmp::PartialOrd + Ord + Clone> BST<ValTyp
         }
     }
 
-    fn find_min_node(node: &mut Option<Box<Node<ValType>>>) -> Option<Box<Node<ValType>>> {
+    fn find_min_node(node: &mut Option<Box<Node<ValType>>>) -> Option<&mut Box<Node<ValType>>> {
         match node {
             Some(n) => {
                 if n.left.is_none() {
-                    node.take()
+                    Some(n)
                 } else {
                     Self::find_min_node(&mut n.left)
                 }
