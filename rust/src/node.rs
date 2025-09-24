@@ -1,17 +1,17 @@
-#[derive(Debug, Clone)]
-pub struct Node<ValType> 
-where ValType: std::fmt::Display + Ord + Clone,
+#[derive(Debug)]
+pub struct Node<ValType>
+where
+    ValType: Ord,
 {
     pub value: ValType,
-    pub left: Option<Box<Node<ValType>>>,
-    pub right: Option<Box<Node<ValType>>>,
+    pub left: Option<usize>,
+    pub right: Option<usize>,
 }
 
-impl<ValType: std::fmt::Display + Ord + Clone> Node<ValType> 
-{
-    pub fn new(value: &ValType) -> Node<ValType> {
-        Node { 
-            value: value.clone(), 
+impl<ValType: Ord> Node<ValType> {
+    pub fn new(value: ValType) -> Node<ValType> {
+        Node {
+            value,
             left: None,
             right: None,
         }
@@ -32,19 +32,17 @@ mod tests {
 
     #[test]
     fn test_linking() {
+        let node2 = Node::new(3);
+        let node3 = Node::new(7);
 
-        // The BST would have a Vec<Node<T>> so simulate that here
-        let mut nodes = vec![];
-        
-        let root = Node::new(&5);
-        nodes.push(root);
-        let root_index = 0; // The root is at index 0
-        
-        // Now work with the node through the vector
-        nodes[root_index].left = Some(Box::new(Node::new(&3)));
-        nodes[root_index].right = Some(Box::new(Node::new(&7)));
-        
-        assert_eq!(nodes[root_index].left.as_ref().unwrap().value, 3);
-        assert_eq!(nodes[root_index].right.as_ref().unwrap().value, 7);
+        // simulate the BST storage.
+        let nodes = vec![node2, node3];
+
+        let mut root = Node::new(5);
+        root.left = Some(0);
+        root.right = Some(1);
+
+        assert_eq!(nodes[root.left.unwrap()].value, 3);
+        assert_eq!(nodes[root.right.unwrap()].value, 7);
     }
 }
