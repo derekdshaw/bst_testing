@@ -1,19 +1,19 @@
-use std::boxed::Box;
+//use std::boxed::Box;
 
 #[derive(Debug)]
-pub struct Node<ValType> 
-where ValType: Ord,
+pub struct Node<ValType>
+where
+    ValType: Ord,
 {
     pub value: ValType,
-    pub left: Option<Box<Node<ValType>>>,
-    pub right: Option<Box<Node<ValType>>>,
+    pub left: Option<usize>,
+    pub right: Option<usize>,
 }
 
-impl<ValType: Ord> Node<ValType> 
-{
+impl<ValType: Ord> Node<ValType> {
     pub fn new(value: ValType) -> Node<ValType> {
-        Node { 
-            value, 
+        Node {
+            value,
             left: None,
             right: None,
         }
@@ -34,14 +34,17 @@ mod tests {
 
     #[test]
     fn test_linking() {
-        let node2 = Box::new(Node::new(3));
-        let node3 = Box::new(Node::new(7));
-        
-        let mut root = Box::new(Node::new(5));
-        root.left = Some(node2);
-        root.right = Some(node3);
-        
-        assert_eq!(root.left.unwrap().value, 3);
-        assert_eq!(root.right.unwrap().value, 7);
+        let node2 = Node::new(3);
+        let node3 = Node::new(7);
+
+        // simulate the BST storage.
+        let nodes = vec![node2, node3];
+
+        let mut root = Node::new(5);
+        root.left = Some(0);
+        root.right = Some(1);
+
+        assert_eq!(nodes[root.left.unwrap()].value, 3);
+        assert_eq!(nodes[root.right.unwrap()].value, 7);
     }
 }

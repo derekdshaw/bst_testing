@@ -1,50 +1,78 @@
 use crate::node::Node;
-use std::boxed::Box;
 use std::cmp::Ordering;
 
 #[derive(Debug)]
-pub struct BST<ValType> 
-where ValType: Ord,
+pub struct BST<ValType>
+where
+    ValType: Ord + Clone,
 {
-    root: Option<Box<Node<ValType>>>
+    nodes: Vec<Node<ValType>>,
+    root: Option<usize>,
 }
-impl<ValType: Ord> BST<ValType> {
+impl<ValType: Ord + Clone> BST<ValType> {
     pub fn new() -> Self {
-        BST { root: None }
+        BST {
+            nodes: Vec::with_capacity(10000),
+            root: None,
+        }
+    }
+
+    fn alloc_node(&mut self, value: ValType) -> usize {
+        let idx = self.nodes.len();
+        self.nodes.push(Node::new(value));
+        idx
     }
 
     pub fn insert(&mut self, value: ValType) {
-        Self::insert_internal(&mut self.root, value);
+        if self.root.is_none() {
+            let idx = self.alloc_node(value);
+            self.root = Some(idx);
+        } else {
+            self.insert_non_empty(value);
+        }
     }
 
-    fn insert_internal(node: &mut Option<Box<Node<ValType>>>, value: ValType) {   
-        match node {
-            Some(cur) => {
-                match value.cmp(&cur.value) {
-                    Ordering::Less => {
-                        Self::insert_internal(&mut cur.left, value);
-                    },
-                    Ordering::Greater => {
-                        Self::insert_internal(&mut cur.right, value);
-                    },
-                    Ordering::Equal => {} // Duplicate value, do nothing
+    fn insert_non_empty(&mut self, value: ValType) {
+        let mut current = self.root;
+        let mut parent = None;
+        let mut went_left = false;
+
+        while let Some(idx) = current {
+            parent = Some(idx);
+            match value.cmp(&self.nodes[idx].value) {
+                Ordering::Less => {
+                    current = self.nodes[idx].left;
+                    went_left = true;
                 }
-            },
-            None => {
-                *node = Some(Box::new(Node::new(value)));
+                Ordering::Greater => {
+                    current = self.nodes[idx].right;
+                    went_left = false;
+                }
+                Ordering::Equal => return,
+            }
+        }
+
+        let new_idx = self.alloc_node(value);
+        if let Some(parent_idx) = parent {
+            let parent_node = &mut self.nodes[parent_idx];
+            if went_left {
+                parent_node.left = Some(new_idx);
+            } else {
+                parent_node.right = Some(new_idx);
             }
         }
     }
 
     pub fn find(&self, value: &ValType) -> bool {
-        Self::find_internal(&self.root, value)
+        self.find_internal(&self.root, value)
     }
-    fn find_internal(current: &Option<Box<Node<ValType>>>, value: &ValType) -> bool {
-        if let Some(cur) = current {
-            match value.cmp(&cur.value) {
-                Ordering::Less => Self::find_internal(&cur.left, value),
-                Ordering::Greater => Self::find_internal(&cur.right, value),
-                Ordering::Equal => true
+    fn find_internal(&self, current: &Option<usize>, value: &ValType) -> bool {
+        if let Some(cur_idx) = current {
+            let node = &self.nodes[*cur_idx];
+            match value.cmp(&node.value) {
+                Ordering::Less => self.find_internal(&node.left, value),
+                Ordering::Greater => self.find_internal(&node.right, value),
+                Ordering::Equal => true,
             }
         } else {
             false
@@ -52,76 +80,60 @@ impl<ValType: Ord> BST<ValType> {
     }
 
     pub fn delete(&mut self, value: ValType) {
-        self.root = Self::delete_internal(&mut self.root, value);
+        self.root = self.delete_internal(self.root, &value);
     }
 
-    fn delete_internal(node: &mut Option<Box<Node<ValType>>>, value: ValType) -> Option<Box<Node<ValType>>> {
-        if let Some(cur) = node {
-            match value.cmp(&cur.value) {
-                Ordering::Less => {
-                    let new_left = Self::delete_internal(&mut cur.left, value);
-                    cur.left = new_left;
-                    Some(node.take().unwrap())
-                },
-                Ordering::Greater => {
-                    let new_right = Self::delete_internal(&mut cur.right, value);
-                    cur.right = new_right;
-                    Some(node.take().unwrap())
-                },
-                Ordering::Equal => {
-                    // Case 1: No children
-                    if cur.left.is_none() && cur.right.is_none() {
-                        None
-                    }
-                    // Case 2: Only right child
-                    else if cur.left.is_none() {
-                        Some(cur.right.take().unwrap())
-                    }
-                    // Case 3: Only left child
-                    else if cur.right.is_none() {
-                        Some(cur.left.take().unwrap())
-                    }
-                    // Case 4: Two children
-                    else {
-                        if let Some(successor) = Self::find_min_node(&mut cur.right) {
-                            std::mem::swap(&mut cur.value, &mut successor.value);
-                            Self::delete_internal(&mut cur.right, value)
-                            // let value = successor.value;
-                            // let mut new_node = Box::new(Node::new(value.clone()));
-                            // new_node.left = Some(cur.left.take().unwrap());
-                            // new_node.right = Self::delete_internal(&mut cur.right, value);
-                            // Some(new_node)
-                        } else {
-                            None
-                        }
+    fn delete_internal(&mut self, node_idx: Option<usize>, value: &ValType) -> Option<usize> {
+        let idx = match node_idx {
+            Some(i) => i,
+            None => return None,
+        };
+
+        match value.cmp(&self.nodes[idx].value) {
+            Ordering::Less => {
+                let left = self.nodes[idx].left;
+                self.nodes[idx].left = self.delete_internal(left, value);
+                Some(idx)
+            }
+            Ordering::Greater => {
+                let right = self.nodes[idx].right;
+                self.nodes[idx].right = self.delete_internal(right, value);
+                Some(idx)
+            }
+            Ordering::Equal => {
+                let left = self.nodes[idx].left;
+                let right = self.nodes[idx].right;
+
+                match (left, right) {
+                    (None, None) => None,
+                    (Some(child), None) | (None, Some(child)) => Some(child),
+                    (Some(_), Some(right_idx)) => {
+                        let successor_idx = self.find_min_idx(right_idx);
+                        let successor_value = self.nodes[successor_idx].value.clone();
+                        self.nodes[idx].value = successor_value.clone();
+                        let new_right = self.delete_internal(right, &successor_value);
+                        self.nodes[idx].right = new_right;
+                        Some(idx)
                     }
                 }
             }
-        } else {
-            None
         }
     }
 
-    fn find_min_node(node: &mut Option<Box<Node<ValType>>>) -> Option<&mut Box<Node<ValType>>> {
-        match node {
-            Some(n) => {
-                if n.left.is_none() {
-                    Some(n)
-                } else {
-                    Self::find_min_node(&mut n.left)
-                }
-            },
-            None => None
+    fn find_min_idx(&self, mut idx: usize) -> usize {
+        while let Some(next) = self.nodes[idx].left {
+            idx = next;
         }
+        idx
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use rand::Rng;
     use std::collections::HashSet;
     use std::time::Instant;
-    use rand::Rng;
 
     fn make_small_tree() -> BST<i32> {
         let mut bst = BST::new();
@@ -134,11 +146,11 @@ mod tests {
     fn make_large_data() -> (HashSet<i32>, i32) {
         let mut rng = rand::thread_rng();
         let mut data = HashSet::new();
-        
+
         while data.len() < 1_000_000 {
             data.insert(rng.gen_range(1..2_000_000));
         }
-        
+
         let target = rng.gen_range(1..2_000_000);
         (data, target)
     }
