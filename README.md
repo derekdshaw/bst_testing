@@ -29,6 +29,6 @@ Just build the release version and run it. The tests will ouput timings. Not qui
 
 ## Conclusion
 
-This was a fun project. I learned a bit more about the performance and usage of the Rust borrow checker. As the performace of the Insert method was really bad when not using a RefCell container around the child nodes. 
+This was a fun project. I learned a bit more about the performance and usage of the Rust borrow checker. In the Rust version the performace of the Insert method was really bad when not using a RefCell container around the child nodes. I tried various approaches, see merges in git, I landed on a vector to store the nodes and node references a indexes. This cut down on the number of memory allocations and seems to be the fastest version I could create.
 
 Feel free to reach out if you have any questions or observations.
